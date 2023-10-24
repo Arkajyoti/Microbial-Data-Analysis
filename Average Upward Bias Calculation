@@ -1,0 +1,262 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 17 11:55:34 2020
+
+@author: arkajyoti.ghoshal
+"""
+import os
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import cv2
+import numpy as np
+import pandas as pd
+
+import pims
+import trackpy as tp
+import cv2
+from collections import Counter
+import matplotlib.cm as cm
+
+#pthB='P:/HA452_Motility/24h_R2/BR1/'
+#svB='C:/PhD/Hak_motility/24hrs/R2/Analysed/BR1/'#3/TR2/Top/Bias//'
+h1,h2=30,2020
+
+br=['BR1/','BR2/','BR3/']
+###No BR as diff BRs can have diff h1,h2####
+sets=[1,2,3,4,5,6]
+tr=['TR1/','TR2/']
+pos=['Bot/']#,'Bot/']
+
+##########################4 poz changes ###################
+
+bines=['99','198','298','397','497','596','695','795','894','994','1093','1192','1292','1391','1491','1590','1689','1789','1888','1988']
+#fig,axs=plt.subplots(1,6)
+#fig.subplots_adjust(hspace=.5)
+fin_rf=[] #all rel freq
+ml,sdl=[],[]
+cellc,fnf=[],[]
+l=((np.arange(20,0,-1).tolist()))
+print(l)
+for ps in range(len(pos)):    
+    for st in range(len(sets)):
+        mat=[]
+        
+        
+        for b in range(len(br)):
+            #ar_tr=[]
+            ls=[]
+            for rt in range(len(tr)):
+                
+                path='C:/PhD/Hak_motility/24hrs/R2/Analysed/'+str(br[b])+str(sets[st])+'/'+str(tr[rt])+str(pos[ps])+'Bias//y_combined.csv'
+                print(path)
+                yc1=list((pd.read_csv(path))['yval'])
+                fn=sorted(list(set((pd.read_csv(path))['frame'])))
+                nof=(fn[-1]/4)+1
+                cn,bn=np.histogram(yc1,bins=20)
+                #print('lll',cn)
+                cellc.append(cn)
+                cn=cn/sum(cn)
+                fnf.append(nof)
+                #plt.xticks([])
+                #plt.tick_params(axis='x', which='minor', labelsize=12)
+                #plt.tick_params(axis='x', which='major', labelsize=12)
+                #plt.gcf().set_size_inches(14,8)
+                #plt.xlabel('Channel Height (pix)', labelpad=15)
+                #plt.ylabel('Rel. Freq.')
+                #plt.bar(bines,cn)
+                #plt.ylim(0,.2)
+                #plt.xticks(np.arange(0,2000,500),('2000','1800','900','800'))
+                
+                mat.append(cn)
+                #plt.savefig('C:/PhD/Hak_motility/24hrs/R2/Analysed/Combined/Bias 2/Bot//'+str(sets[st])[:]+'_'+str(br[b])[:-1]+'_'+str(tr[rt])[:-1]+''+'.png')
+                #plt.show()
+            
+                ls=ls+yc1
+                #print(len(yc1))
+            #print(len(ls))
+            cnt,bine=np.histogram(ls,bins=20)
+            #print(cnt,bine,sum(cnt))
+            cnt=cnt/sum(cnt)
+            #print(cnt,bine)
+            #plt.tick_params(
+             #       axis='x',          # changes apply to the x-axis
+              #      which='both',      # both major and minor ticks are affected
+               #     bottom=False,      # ticks along the bottom edge are off
+                #    top=False,         # ticks along the top edge are off
+                 #   labelbottom=False)
+            #plt.xlabel('Channel Height (pix)', labelpad=15)
+            #plt.tick_params(axis='x', which='minor', labelsize=12)
+            #plt.tick_params(axis='x', which='major', labelsize=12)
+            #plt.gcf().set_size_inches(14,8)
+            #plt.bar(bines,cnt)
+            #plt.ylim(0,.2)
+            #plt.ylabel('Rel. Freq.')
+            #plt.savefig('C:/PhD/Hak_motility/24hrs/R2/Analysed/Combined/Bias 2/Bot//'+str(sets[st])[:]+'_'+str(br[b])[:-1]+'_'+'Av.png')
+            #plt.show()
+            
+            
+            
+                
+        matf=np.matrix(mat)
+        fin_rf=fin_rf+(mat)
+        #cc=
+        #np.savetxt('C:/PhD/Hak_motility/24hrs/R2/Analysed/Combined/Bias 2/Top//'+str(sets[st])[:]+'_'+str(br[b])[:-1]+'.csv',matf,delimiter=',')
+        #print(matf)
+        #np.savetxt('C:/PhD/Hak_motility/24hrs/R2/Analysed/Combined/Bias 2/Top//'+str(sets[st])[:]+'_'+str(br[b])[:-1]+'.csv',matf,delimiter=',')
+        #print(matf)
+
+        row,col=matf.shape
+        mn,dv=[],[]
+        #print(matf,row,col)
+        for jj in range(col):
+        #print(jj)
+            mean,stdev=np.mean(matf[:,jj]),np.std(matf[:,jj])
+            #sm=(np.sum(matf[:,jj]))
+            mn.append(mean)#/sm)
+            
+            dv.append(stdev)
+        mna=mn
+        dva=dv
+        #mna=(np.array(mn)/sum(np.array(mn)))
+        #dva=(np.array(dv)/sum(np.array(mn)))
+        #print(len(mna),'ooo',len(dva))
+        ml.append(mna)
+        sdl.append(dva)
+#ccf=(np.matrix(cellc))
+fin_rf=(np.array(fin_rf))
+ccf2=(np.array(cellc))
+fnf2=(np.array(fnf)).T
+#print(ccf2,fnf2)
+cntf= ccf2/fnf2[:,None]
+print(fin_rf)
+#np.savetxt('C:/PhD/Hak_motility/24hrs/R2/Analysed/Combined/Bias 2/Top//'+'Cell count'+'.csv',ccf)  
+#print(len(fnf))
+
+
+############ upward bias ###############
+
+def up_b(mtx):
+    bias_v=[]
+    r,c=mtx.shape
+    for tt in range(r):
+        ubv=(np.sum(mtx[tt,:4])-np.sum(mtx[tt,-4:]))/(np.sum(mtx[tt,:4])+np.sum(mtx[tt,-4:]))
+        bias_v.append(ubv)
+    return(bias_v)
+    
+zz=up_b(fin_rf)
+print(zz)
+aB,sB=[],[]
+for hh in range(0,36,6):
+    #print(hh)
+    avB,sdB=np.mean(zz[hh:hh+6]),np.std(zz[hh:hh+6])
+    aB.append(avB)
+    sB.append(sdB)
+print(avB)
+tpt=['1','2','3','4','5','6']
+tpt2=['11h','15h','20h','00h','04h','08h']
+cols=['r','orange','g','k','cyan','indigo']
+#plt.errorbar(['1','2','3','4','5','6'],aB,fmt='o',yerr=sB)
+for hh in range(len(aB)):
+    plt.gcf().set_size_inches(20,15)
+    plt.errorbar(tpt[hh],aB[hh],fmt='o',yerr=sB[hh],color=cols[hh],label=tpt2[hh])
+    plt.xlabel('Time points',labelpad=15)
+    plt.ylabel('Upward Bias',labelpad=15)
+    plt.legend()
+#print('0000000000000000000000000000000000000',fin_rf[0,:4],fin_rf[0,-4:])        
+#plt.errorbar(tp[0],aB[0],fmt='o',yerr=sB[0])
+    
+
+'''
+fig,(a1,a2,a3,a4,a5,a6)=plt.subplots(1,6,figsize=(18,12),sharex=True,sharey=True)
+a1.errorbar(ml[0],l,xerr=sdl[0],fmt='r')
+#y_ticks = bines
+#a1.set_ylim([y_ticks[0] - 50, y_ticks[-1] + 50])
+
+#a1.set_yticklabels(y_ticks)
+a1.yaxis.set_visible(False)
+a2.errorbar(ml[1],l,xerr=sdl[1],fmt='orange')
+a3.errorbar(ml[2],l,xerr=sdl[2],fmt='g')
+a4.errorbar(ml[3],l,xerr=sdl[3],fmt='k')
+a5.errorbar(ml[4],l,xerr=sdl[4],fmt='cyan')
+a6.errorbar(ml[5],l,xerr=sdl[5],fmt='indigo')
+
+
+fig.add_subplot(111,frameon=False)
+plt.tick_params(labelcolor='None',top=False,right=False,left=False,bottom=False)
+plt.xlabel('Relative Frequency')
+plt.ylabel('Chamber Height',labelpad=20)
+
+for ax in fig.get_axes():
+    #print(ax)
+    ax.label_outer()
+
+plt.xticks(fontsize=14)
+plt.show()
+
+fig2,(a12,a22,a32,a42,a52,a62)=plt.subplots(1,6,figsize=(18,12),sharex=True,sharey=True)
+a12.barh(bines [::-1],ml[0][::-1],facecolor='r',edgecolor='k',xerr=sdl[0][::-1])
+a12.set_xlim(0,0.2)
+a12.yaxis.set_visible(False)
+a22.barh(bines [::-1],ml[1][::-1],facecolor='orange',edgecolor='k',xerr=sdl[1][::-1])
+a32.barh(bines [::-1],ml[2][::-1],facecolor='g',edgecolor='k',xerr=sdl[2][::-1])
+a42.barh(bines [::-1],ml[3][::-1],facecolor='k',edgecolor='k',xerr=sdl[3][::-1])
+a52.barh(bines [::-1],ml[4][::-1],facecolor='cyan',edgecolor='k',xerr=sdl[4][::-1])
+a62.barh(bines [::-1],ml[5][::-1],facecolor='indigo',edgecolor='k',xerr=sdl[5][::-1])
+fig2.add_subplot(111,frameon=False)
+plt.tick_params(labelcolor='None',top=False,right=False,left=False,bottom=False)
+plt.xlabel('Relative Frequency',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=20)
+
+
+
+plt.rcParams["figure.figsize"] = (2,3)
+
+c1m,c1s=np.mean((cntf[0:6,:]),axis=0),np.std((cntf[0:6,:]),axis=0)
+#print(cntf[0:6,:],c1m,c1s)
+plt.errorbar(c1m[::-1],bines,xerr=c1s[::-1],color='r',fmt='o')
+plt.xlabel('Absolute Cell Count',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=15)
+plt.yticks([])
+plt.show()
+
+
+
+c2m,c2s=np.mean((cntf[6:12,:]),axis=0),np.std((cntf[6:12,:]),axis=0)
+plt.errorbar(c2m[::-1],bines,xerr=c2s[::-1],color='orange',fmt='o')
+plt.xlabel('Absolute Cell Count',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=15)
+plt.yticks([])
+plt.show()
+
+
+c3m,c3s=np.mean((cntf[12:18,:]),axis=0),np.std((cntf[12:18,:]),axis=0)
+plt.errorbar(c3m[::-1],bines,xerr=c3s[::-1],color='g',fmt='o')
+plt.xlabel('Absolute Cell Count',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=15)
+plt.yticks([])
+plt.show()
+
+
+c4m,c4s=np.mean((cntf[18:24,:]),axis=0),np.std((cntf[18:24,:]),axis=0)
+plt.errorbar(c4m[::-1],bines,xerr=c4s[::-1],color='k',fmt='o')
+plt.xlabel('Absolute Cell Count',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=15)
+plt.yticks([])
+plt.show()
+
+
+c5m,c5s=np.mean((cntf[24:30,:]),axis=0),np.std((cntf[24:30,:]),axis=0)
+plt.errorbar(c5m[::-1],bines,xerr=c5s[::-1],color='cyan',fmt='o')
+plt.xlabel('Absolute Cell Count',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=15)
+plt.yticks([])
+plt.show()
+
+c6m,c6s=np.mean((cntf[30:36,:]),axis=0),np.std((cntf[30:36,:]),axis=0)
+plt.errorbar(c6m[::-1],bines,xerr=c6s[::-1],color='indigo',fmt='o')
+plt.xlabel('Absolute Cell Count',labelpad=15)
+plt.ylabel('Chamber Height',labelpad=15)
+plt.yticks([])
+plt.show()
+'''
+
